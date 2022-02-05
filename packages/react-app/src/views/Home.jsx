@@ -1,100 +1,184 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { useContractReader } from "eth-hooks";
+import React, { useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 
 import { ethers } from "ethers";
 
-/**
- * web3 props can be passed from '../App.jsx' into your local view component for use
- * @param {*} yourLocalBalance balance on current network
- * @param {*} readContracts contracts from current chain already pre-loaded using ethers contract module. More here https://docs.ethers.io/v5/api/contract/contract/
- * @returns react component
- **/
-function Home({ yourLocalBalance, readContracts }) {
-  // you can also use hooks locally in your component of choice
-  // in this case, let's keep track of 'purpose' variable from our contract
-  const purpose = useContractReader(readContracts, "YourContract", "purpose");
+function Home() {
+
+  const history = useHistory();
+  const [uploadedFile, setUploadedFile] = useState();
+  const [uploadedFileType, setUploadedFileType] = useState();
+  const [preSignedUrl, setPreSignedUrl] = useState();
+  const [displayPreview, setDisplayPreview] = useState();
+  const [previewUrl, setPreviewUrl] = useState();
+
+  const [formInput, setFormInput] = useState({});
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [mintedToken, setMintedToken] = useState();
+  const [songUpload, setImageUpload] = useState({ inProgress: false, complete: false });
+  const [inProgress, setInProgress] = useState(false);
+  const [fileName, setFileName] = useState();
+
+  useEffect(() => {
+    console.log(songUpload);
+}, [songUpload]);
+
+useEffect(() => {
+  // Get AWS presigned url
+  if (uploadedFile) {
+      setInProgress(true);
+      async function postData(url = '', body) {
+          const response = await fetch(url, {
+              method: 'POST',
+              mode: 'cors',
+              cache: 'no-cache',
+              credentials: 'same-origin',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              redirect: 'follow',
+              referrerPolicy: 'no-referrer',
+              body: JSON.stringify(body),
+          });
+          return response.json();
+      }
+
+      postData('"', { file_ext: uploadedFileType }).then((data) => {
+          setFileName(data.file_name);
+          setPreviewUrl(`https://"/${data.file_name}`);
+          setPreSignedUrl(data.presigned_url);
+      });
+  }
+}, [uploadedFile]);
+
+useEffect(() => {
+  // Save to S3 bucket
+  if (preSignedUrl) {
+      setImageUpload({ inProgess: true, complete: false });
+      async function uploadFileToS3(url, file) {
+          let formData = new FormData();
+          formData.append('file', file);
+
+          const response = await fetch(url, {
+              method: 'PUT',
+              headers: {
+                  'Content-Type': file.type,
+              },
+              body: file,
+          });
+          return response;
+      }
+
+      uploadFileToS3(preSignedUrl, uploadedFile).then((response) => {
+          if (response.ok) {
+              setDisplayPreview(true);
+              setImageUpload({ inProgess: false, complete: true });
+          } else {
+              console.log('song upload error', response);
+          }
+      });
+  }
+}, [preSignedUrl]);
+
+useEffect(() => {
+  if (displayPreview) {
+      setImageUpload({ inProgess: false, complete: true });
+      setInProgress(false);
+  }
+}, [displayPreview]);
+
+const handleImageUpload = (e) => {
+  e.preventDefault();
+  const files = document.querySelector('[type=file]').files;
+  getFileExtension(files[0]);
+  setUploadedFile(files[0]);
+  setImageUpload({ inProgess: true, complete: false });
+};
+
+const getFileExtension = (file) => {
+  let fileTypeStrings = file.type.split('/');
+  let fileType = fileTypeStrings[fileTypeStrings.length - 1];
+  setUploadedFileType(fileType);
+};
 
   return (
+    
     <div>
       <div style={{ margin: 32 }}>
-        <span style={{ marginRight: 8 }}>📝</span>
-        This Is Your App Home. You can start editing it in{" "}
-        <span
-          className="highlight"
-          style={{ marginLeft: 4, /* backgroundColor: "#f9f9f9", */ padding: 4, borderRadius: 4, fontWeight: "bolder" }}
-        >
-          packages/react-app/src/views/Home.jsx
-        </span>
+        <span style={{ marginRight: 8 }}></span>
+        Every song has its own TuneStamp. No duplicates.
       </div>
       <div style={{ margin: 32 }}>
-        <span style={{ marginRight: 8 }}>✏️</span>
-        Edit your smart contract {" "}
-        <span
-          className="highlight"
-          style={{ marginLeft: 4, /* backgroundColor: "#f9f9f9", */ padding: 4, borderRadius: 4, fontWeight: "bolder" }}
-        >
-          YourContract.sol
-        </span>{" "}in{" "}
-        <span
-          className="highlight"
-          style={{ marginLeft: 4, /* backgroundColor: "#f9f9f9", */ padding: 4, borderRadius: 4, fontWeight: "bolder" }}
-        >
-          packages/hardhat/contracts
-        </span>
+        <span style={{ marginRight: 8 }}></span>
+        Upload your music and create TuneStamp NFTs.
       </div>
-      {!purpose?<div style={{ margin: 32 }}>
-        <span style={{ marginRight: 8 }}>👷‍♀️</span>
-        You haven't deployed your contract yet, run
-        <span
-          className="highlight"
-          style={{ marginLeft: 4, /* backgroundColor: "#f9f9f9", */ padding: 4, borderRadius: 4, fontWeight: "bolder" }}
-        >
-          yarn chain
-        </span> and <span
-            className="highlight"
-            style={{ marginLeft: 4, /* backgroundColor: "#f9f9f9", */ padding: 4, borderRadius: 4, fontWeight: "bolder" }}
-          >
-            yarn deploy
-          </span> to deploy your first contract!
-      </div>:<div style={{ margin: 32 }}>
-        <span style={{ marginRight: 8 }}>🤓</span>
-        The "purpose" variable from your contract is{" "}
-        <span
-          className="highlight"
-          style={{ marginLeft: 4, /* backgroundColor: "#f9f9f9", */ padding: 4, borderRadius: 4, fontWeight: "bolder" }}
-        >
-          {purpose}
-        </span>
-      </div>}
+      <div style={{ margin: 32 }}>
+        <span style={{ marginRight: 8 }}></span>
+        If the TuneStamp already exists, try another song.
+        
+      </div>
+      {!uploadSuccess && (
+      <div >
 
-      <div style={{ margin: 32 }}>
-        <span style={{ marginRight: 8 }}>🤖</span>
-        An example prop of your balance{" "}
-        <span style={{ fontWeight: "bold", color: "green" }}>({ethers.utils.formatEther(yourLocalBalance)})</span> was
-        passed into the
-        <span
-          className="highlight"
-          style={{ marginLeft: 4, /* backgroundColor: "#f9f9f9", */ padding: 4, borderRadius: 4, fontWeight: "bolder" }}
-        >
-          Home.jsx
-        </span>{" "}
-        component from
-        <span
-          className="highlight"
-          style={{ marginLeft: 4, /* backgroundColor: "#f9f9f9", */ padding: 4, borderRadius: 4, fontWeight: "bolder" }}
-        >
-          App.jsx
-        </span>
-      </div>
-      <div style={{ margin: 32 }}>
-        <span style={{ marginRight: 8 }}>💭</span>
-        Check out the <Link to="/hints">"Hints"</Link> tab for more tips.
-      </div>
-      <div style={{ margin: 32 }}>
-        <span style={{ marginRight: 8 }}>🛠</span>
-        Tinker with your smart contract using the <Link to="/debug">"Debug Contract"</Link> tab.
-      </div>
+          <div style={{ margin: 32 }}>
+            <form
+              className='file-upload'
+              method='post'
+              encType='multipart/form-data'
+              onSubmit={handleImageUpload}
+            >
+              <input
+                  type='file'
+                  id='nft-upload-btn'
+                  name='nft-upload-btn'
+                  onChange={handleImageUpload}
+                  // accept='image/png,image/jpeg,image/gif,image/webp,video/mp4,video/webm,audio/mp3,audio/webm,audio/mpeg'
+                  accept='audio/mp3,audio/webm,audio/mpeg'
+                  title='Drag and drop song'
+              />
+            </form>
+
+              {inProgress && <p>uploading image</p>}
+
+              <form name='nft mint' autoComplete='off'>
+                  <div style={{ margin: 32 }}>
+                      <div >
+                          <label htmlFor='name' >
+                              Song Name
+                          </label>
+                          <input
+                              name='name'
+                              id='name'
+                              type='text'
+                              value={formInput.name}
+                              placeholder='Name'
+                              onChange={(e) => setFormInput({ ...formInput, name: e.target.value })}
+                          />
+                      </div>
+
+                      <div >
+                          <label htmlFor='artist' >
+                              Artist Name
+                          </label>
+                          <input
+                              name='artist'
+                              id='artist'
+                              type='text'
+                              value={formInput.artist}
+                              placeholder='Artist Name'
+                              onChange={(e) => setFormInput({ ...formInput, artist: e.target.value })}
+                          />
+                      </div>
+
+                      <button onClick={setInProgress}>
+                          Mint 
+                      </button>
+                  </div>
+              </form>
+          </div>
+          <div className='create-preview'>{displayPreview && <img src={previewUrl} alt='' />}</div>
+    </div>
+    )   }
     </div>
   );
 }

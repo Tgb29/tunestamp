@@ -8,7 +8,7 @@ export default function Header() {
     <a href="https://tunestamp.com" rel="noopener noreferrer">
       <PageHeader
         title="TuneStamp"
-        subTitle="mint rare sound wave NFTs with your music"
+        subTitle="mint rare NFTs with your music"
         style={{ cursor: "pointer" }}
       />
     </a>
