@@ -43,9 +43,9 @@ useEffect(() => {
           return response.json();
       }
 
-      postData('"', { file_ext: uploadedFileType }).then((data) => {
+      postData('https://app.sudocoins.com/art/start-mint', { file_ext: uploadedFileType }).then((data) => {
           setFileName(data.file_name);
-          setPreviewUrl(`https://"/${data.file_name}`);
+          setPreviewUrl(`https://cdn.sudocoins.com/${data.file_name}`);
           setPreSignedUrl(data.presigned_url);
       });
   }
@@ -106,7 +106,7 @@ const getFileExtension = (file) => {
     <div>
       <div style={{ margin: 32 }}>
         <span style={{ marginRight: 8 }}></span>
-        Every song has its own TuneStamp. No duplicates.
+        Every song has its own unique TuneStamp.
       </div>
       <div style={{ margin: 32 }}>
         <span style={{ marginRight: 8 }}></span>
@@ -114,7 +114,7 @@ const getFileExtension = (file) => {
       </div>
       <div style={{ margin: 32 }}>
         <span style={{ marginRight: 8 }}></span>
-        If the TuneStamp already exists, try another song.
+        If the TuneStamp already exists, try another song. No duplicates.
         
       </div>
       {!uploadSuccess && (
@@ -132,8 +132,8 @@ const getFileExtension = (file) => {
                   id='nft-upload-btn'
                   name='nft-upload-btn'
                   onChange={handleImageUpload}
-                  // accept='image/png,image/jpeg,image/gif,image/webp,video/mp4,video/webm,audio/mp3,audio/webm,audio/mpeg'
-                  accept='audio/mp3,audio/webm,audio/mpeg'
+                  accept='image/png,image/jpeg,image/gif,image/webp,video/mp4,video/webm,audio/mp3,audio/webm,audio/mpeg'
+                  // accept='audio/mp3,audio/webm,audio/mpeg'
                   title='Drag and drop song'
               />
             </form>
@@ -143,23 +143,17 @@ const getFileExtension = (file) => {
               <form name='nft mint' autoComplete='off'>
                   <div style={{ margin: 32 }}>
                       <div >
-                          <label htmlFor='name' >
-                              Song Name
-                          </label>
                           <input
                               name='name'
                               id='name'
                               type='text'
                               value={formInput.name}
-                              placeholder='Name'
+                              placeholder='Song Name'
                               onChange={(e) => setFormInput({ ...formInput, name: e.target.value })}
                           />
                       </div>
 
-                      <div >
-                          <label htmlFor='artist' >
-                              Artist Name
-                          </label>
+                      <div style={{ margin: 32 }}>
                           <input
                               name='artist'
                               id='artist'
@@ -176,7 +170,7 @@ const getFileExtension = (file) => {
                   </div>
               </form>
           </div>
-          <div className='create-preview'>{displayPreview && <img src={previewUrl} alt='' />}</div>
+          <div >{displayPreview && <img src={previewUrl} />}</div>
     </div>
     )   }
     </div>
